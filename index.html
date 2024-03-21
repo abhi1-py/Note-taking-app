@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Notepad-like Webpage</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f9f9f9;
+    }
+
+    .notepad {
+      width: 80%;
+      max-width: 800px;
+      height: 80vh;
+      background-color: #ffffff;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: box-shadow 0.3s ease;
+    }
+
+    .notepad:hover {
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    textarea {
+      width: 100%;
+      height: calc(100% - 100px); /* Adjusted height to accommodate buttons and dropdowns */
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      resize: both; /* Added for resizable feature */
+      outline: none;
+      padding: 10px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 16px;
+      line-height: 1.5;
+      transition: box-shadow 0.3s ease;
+    }
+
+    textarea:hover {
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    }
+
+    button {
+      margin-right: 10px;
+      padding: 8px 16px;
+      font-size: 14px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      background-color: #4caf50;
+      color: #ffffff;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    select {
+      margin-right: 10px;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    body.dark-mode {
+      background-color: #222;
+      color: #fff;
+    }
+
+    .notepad.dark-mode {
+      background-color: #333;
+      border-color: #555;
+      color: #fff;
+    }
+    body.dark-mode {
+      background-color: #222;
+      color: #fff;
+    }
+
+    .notepad.dark-mode {
+      background-color: #333;
+      border-color: #555;
+      color: #fff;
+    }
+
+    /* Word count, font style, and font size styles */
+    .controls {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+      color: #555;
+      font-size: 14px;
+    }
+
+    .controls > * {
+      margin-right: 10px;
+    }
+
+    .controls select {
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+
+    #wordCount {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="notepad" id="notepad">
+    <textarea id="editor" placeholder="Start typing..." style="font-family: 'Courier New', Courier, monospace; font-size: 16px;"></textarea>
+    <div class="controls">
+        <span id="wordCount">Word count: 0</span>
+        <span>Font Style:</span>
+        <select id="fontStyle" onchange="changeFontStyle()">
+          <option value="Arial">Arial</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Verdana">Verdana</option>
+        </select>
+        <span>Font Size:</span>
+        <select id="fontSize" onchange="changeFontSize()">
+          <option value="12">12px</option>
+          <option value="14">14px</option>
+          <option value="16">16px</option>
+          <option value="18">18px</option>
+        </select>
+    </div>
+    <br>
+    <button onclick="newFile()">New</button>
+    <button onclick="saveFile()">Save</button>
+    <button onclick="clearEditor()">Clear</button>
+    <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+  </div>
+
+  <script>
+    // JavaScript
+    let content = document.getElementById('editor');
+    let wordCountElement = document.getElementById('wordCount');
+    let darkMode = false;
+
+    function newFile() {
+      content.value = '';
+      content.style.fontFamily = 'Courier New, Courier, monospace';
+      content.style.fontSize = '16px';
+      updateWordCount();
+    }
+
+    function saveFile() {
+    let textToSave = content.value;
+    if (!textToSave.trim()) {
+      alert('No content to save.');
+      return;
+    }
+    console.log('Content to be saved:', textToSave);
+    alert('Click OK to save the document');
+    
+    convertToPDF(textToSave); // Call the convertToPDF function with the text content
+  }
+
+  function convertToPDF(textToConvert) {
+    fetch('/generate-pdf', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ content: textToConvert }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          const link = document.createElement('a');
+          link.href = `/${data.fileName}`;
+          link.setAttribute('download', data.fileName);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } else {
+          alert('Failed to generate PDF.');
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        alert('An error occurred while generating the PDF.');
+      });
+  }
+
+
+    function clearEditor() {
+      content.value = '';
+      updateWordCount();
+    }
+
+    function changeFontStyle() {
+      let selectedFont = document.getElementById('fontStyle').value;
+      content.style.fontFamily = selectedFont;
+    }
+
+    function changeFontSize() {
+      let selectedSize = document.getElementById('fontSize').value;
+      content.style.fontSize = selectedSize + 'px';
+    }
+
+    function toggleDarkMode() {
+      darkMode = !darkMode;
+      const notepad = document.getElementById('notepad');
+      if (darkMode) {
+        notepad.classList.add('dark-mode');
+      } else {
+        notepad.classList.remove('dark-mode');
+      }
+    }
+
+    function updateWordCount() {
+      let text = content.value.trim();
+      let words = text.split(/\s+/).filter(function (word) {
+        return word.length > 0;
+      });
+      wordCountElement.textContent = 'Word count: ' + words.length;
+    }
+
+    content.addEventListener('input', updateWordCount);
+  </script>
+</body>
+</html>
+
